@@ -109,9 +109,8 @@ namespace TodoApp
                     }
                 }
 
-                MessageBox.Show("Task added successfully.");
+                MessageBox.Show("Task added successfully.", "Task Added Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             catch (Exception ex)
@@ -148,8 +147,7 @@ namespace TodoApp
                 }
             }
 
-            MessageBox.Show("Task updated successfully.");
-            this.DialogResult = DialogResult.OK;
+            MessageBox.Show("Task updated successfully.", "Update Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
             this.Close();
         }
 
@@ -191,9 +189,10 @@ namespace TodoApp
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                MessageBox.Show("Error loading task:\n" + ex.Message);
+                MessageBox.Show("Task cannot be edited if it is past the current date", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
             }
         }
 
