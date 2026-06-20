@@ -1,12 +1,17 @@
-﻿using System;
+﻿using ClosedXML.Excel;
+using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.Cmp;
+using Org.BouncyCastle.Pqc.Crypto.Falcon;
+using PdfSharpCore.Drawing;
+using PdfSharpCore.Pdf;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Pqc.Crypto.Falcon;
 using TodoApp;
 
 namespace TodoApp
@@ -151,7 +156,7 @@ namespace TodoApp
                     }
                 }
 
-                LoadTask(); // Refresh the DataGridView
+                LoadTask();
             }
             catch (Exception ex)
             {
@@ -325,6 +330,301 @@ namespace TodoApp
                 if (frm.ShowDialog() == DialogResult.OK)
                 {
                     LoadTask();
+                }
+            }
+        }
+
+        private void btnMyAnalytics_Click(object sender, EventArgs e)
+        {
+            MyAnalytics analyticsForm = new MyAnalytics();
+            analyticsForm.ShowDialog(this);
+        }
+
+        private void btnExcel_Click(object sender, EventArgs e)
+        {
+            string statusFilter = cboStatus.SelectedItem?.ToString() ?? "All";
+
+            DataTable dt = new DataTable();
+
+            try
+            {
+                using (var conn = Database.GetConnection())
+                {
+                    conn.Open();
+
+                    string sql = @"SELECT taskID, Done, TaskName, DueDate, Priority
+                            FROM todolists
+                            WHERE usersID = @usersID";
+
+                    if (statusFilter == "Done")
+                        sql += " AND Done = 1";
+                    else if (statusFilter == "Uncomplete")
+                        sql += " AND Done = 0";
+
+                    sql += " ORDER BY DueDate ASC";
+
+                    using (var cmd = new MySqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@usersID", UserSession.UserID);
+
+                        using (var da = new MySqlDataAdapter(cmd))
+
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading tasks for export:\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (dt.Rows.Count == 0)
+            {
+                MessageBox.Show("There are no records to export for the selected filter.",
+                    "Export to Excel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Filter = "Excel Workbook (*.xlsx)|*.xlsx";
+                saveDialog.FileName = $"TaskList_{statusFilter}.xlsx";
+
+                if (saveDialog.ShowDialog() != DialogResult.OK) return;
+
+                try
+                {
+                    using (var workbook = new XLWorkbook())
+                    {
+                        var worksheet = workbook.Worksheets.Add("Tasks");
+
+                        for (int col = 0; col < dt.Columns.Count; col++)
+                        {
+                            worksheet.Cell(1, col + 1).Value = dt.Columns[col].ColumnName;
+                            worksheet.Cell(1, col + 1).Style.Font.Bold = true;
+                        }
+
+                        for (int row = 0; row < dt.Rows.Count; row++)
+                        {
+                            for (int col = 0; col < dt.Columns.Count; col++)
+                            {
+                                object value = dt.Rows[row][col];
+
+                                if (dt.Columns[col].ColumnName == "Done")
+                                {
+                                    bool isDone = Convert.ToInt32(value) == 1;
+
+                                    var cell = worksheet.Cell(row + 2, col + 1);
+                                    cell.Value = isDone ? "✓" : "✗";
+
+                                    cell.Style.Font.FontColor = isDone
+                                        ? XLColor.Green
+                                        : XLColor.Red;
+
+                                    cell.Style.Font.Bold = true;
+                                }
+                                else
+                                {
+                                    worksheet.Cell(row + 2, col + 1).Value = value?.ToString() ?? "";
+                                }
+                            }
+                        }
+
+                        worksheet.Columns().AdjustToContents();
+
+                        workbook.SaveAs(saveDialog.FileName);
+                    }
+
+                    MessageBox.Show("Task/s list exported successfully to Excel.",
+                        "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error exporting to Excel:\n{ex.Message}",
+                        "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnPdf_Click(object sender, EventArgs e)
+        {
+            string statusFilter = cboStatus.SelectedItem?.ToString() ?? "All";
+
+            DataTable dt = new DataTable();
+
+            try
+            {
+                using (var conn = Database.GetConnection())
+                {
+                    conn.Open();
+
+                    string sql = @"SELECT taskID, Done, TaskName, DueDate, Priority
+                           FROM todolists
+                           WHERE usersID = @usersID";
+
+                    if (statusFilter == "Done")
+                        sql += " AND Done = 1";
+                    else if (statusFilter == "Uncomplete")
+                        sql += " AND Done = 0";
+
+                    sql += " ORDER BY DueDate ASC";
+
+                    using (var cmd = new MySqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@usersID", UserSession.UserID);
+
+                        using (var da = new MySqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading tasks for export:\n{ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (dt.Rows.Count == 0)
+            {
+                MessageBox.Show("There are no records to export for the selected filter.",
+                    "Export to PDF", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (SaveFileDialog saveDialog = new SaveFileDialog())
+            {
+                saveDialog.Filter = "PDF Document (*.pdf)|*.pdf";
+                saveDialog.FileName = $"TaskList_{statusFilter}.pdf";
+
+                if (saveDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                try
+                {
+                    using (PdfDocument document = new PdfDocument())
+                    {
+                        PdfPage page = document.AddPage();
+                        page.Orientation = PdfSharpCore.PageOrientation.Landscape;
+
+                        XGraphics gfx = XGraphics.FromPdfPage(page);
+
+                        XFont titleFont = new XFont("Arial", 16, XFontStyle.Bold);
+                        XFont headerFont = new XFont("Arial", 10, XFontStyle.Bold);
+                        XFont cellFont = new XFont("Arial", 9, XFontStyle.Regular);
+
+                        double margin = 30;
+                        double rowHeight = 22;
+
+                        int columnCount = dt.Columns.Count;
+                        double tableWidth = page.Width - (margin * 2);
+                        double colWidth = tableWidth / columnCount;
+
+                        double y = 30;
+
+                        void DrawHeader()
+                        {
+                            gfx.DrawString(
+                                $"Task List Report ({statusFilter})",
+                                titleFont,
+                                XBrushes.Black,
+                                new XRect(0, 10, page.Width, 20),
+                                XStringFormats.TopCenter);
+
+                            double x = margin;
+
+                            for (int col = 0; col < columnCount; col++)
+                            {
+                                gfx.DrawRectangle(XPens.Black, x, y, colWidth, rowHeight);
+
+                                gfx.DrawString(
+                                    dt.Columns[col].ColumnName,
+                                    headerFont,
+                                    XBrushes.Black,
+                                    new XRect(x + 2, y + 3, colWidth, rowHeight),
+                                    XStringFormats.Center);
+
+                                x += colWidth;
+                            }
+                        }
+
+                        DrawHeader();
+                        y += rowHeight;
+
+                        foreach (DataRow row in dt.Rows)
+                        {
+                            if (y + rowHeight > page.Height - margin)
+                            {
+                                page = document.AddPage();
+                                page.Orientation = PdfSharpCore.PageOrientation.Landscape;
+
+                                gfx.Dispose();
+                                gfx = XGraphics.FromPdfPage(page);
+
+                                y = 30;
+                                DrawHeader();
+                                y += rowHeight;
+                            }
+
+                            double x = margin;
+
+                            for (int col = 0; col < columnCount; col++)
+                            {
+                                string text;
+
+                                if (dt.Columns[col].ColumnName == "Done")
+                                {
+                                    bool isDone = Convert.ToInt32(row[col]) == 1;
+                                    text = isDone ? "Done" : "Uncomplete";
+                                }
+                                else if (dt.Columns[col].ColumnName == "DueDate")
+                                {
+                                    text = Convert.ToDateTime(row[col])
+                                        .ToString("yyyy-MM-dd");
+                                }
+                                else
+                                {
+                                    text = row[col]?.ToString() ?? "";
+                                }
+
+                                gfx.DrawRectangle(XPens.Black, x, y, colWidth, rowHeight);
+
+                                gfx.DrawString(
+                                    text,
+                                    cellFont,
+                                    XBrushes.Black,
+                                    new XRect(x + 2, y + 3, colWidth, rowHeight),
+                                    XStringFormats.Center);
+
+                                x += colWidth;
+                            }
+
+                            y += rowHeight;
+                        }
+
+                        gfx.Dispose();
+                        document.Save(saveDialog.FileName);
+                    }
+
+                    MessageBox.Show(
+                        "Task list exported successfully to PDF.",
+                        "Export Complete",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Error exporting to PDF:\n{ex.Message}",
+                        "Export Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
                 }
             }
         }

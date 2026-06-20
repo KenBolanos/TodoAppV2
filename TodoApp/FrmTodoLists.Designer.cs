@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            cboStatus = new ComboBox();
             dgvLists = new DataGridView();
             Done = new DataGridViewCheckBoxColumn();
             TaskID = new DataGridViewTextBoxColumn();
@@ -40,16 +41,34 @@
             btnDone = new Button();
             btnDelete = new Button();
             lblWelcome = new Label();
+            btnMyAnalytics = new Button();
+            btnExcel = new Button();
+            btnPdf = new Button();
+            lblExport = new Label();
             ((System.ComponentModel.ISupportInitialize)dgvLists).BeginInit();
             SuspendLayout();
+            // 
+            // cboStatus
+            // 
+            cboStatus.AutoCompleteCustomSource.AddRange(new string[] { "All", "Done", "Uncomplete" });
+            cboStatus.AutoCompleteMode = AutoCompleteMode.Suggest;
+            cboStatus.AutoCompleteSource = AutoCompleteSource.ListItems;
+            cboStatus.FormattingEnabled = true;
+            cboStatus.Items.AddRange(new object[] { "All", "Done", "Uncomplete" });
+            cboStatus.Location = new Point(472, 118);
+            cboStatus.Name = "cboStatus";
+            cboStatus.Size = new Size(168, 28);
+            cboStatus.TabIndex = 10;
             // 
             // dgvLists
             // 
             dgvLists.AllowUserToAddRows = false;
             dgvLists.AllowUserToDeleteRows = false;
+            dgvLists.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dgvLists.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvLists.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvLists.Columns.AddRange(new DataGridViewColumn[] { Done, TaskID, TaskName, DueDate, Priority });
-            dgvLists.Location = new Point(12, 106);
+            dgvLists.Location = new Point(12, 160);
             dgvLists.Name = "dgvLists";
             dgvLists.RowHeadersVisible = false;
             dgvLists.RowHeadersWidth = 51;
@@ -68,39 +87,34 @@
             Done.Name = "Done";
             Done.Resizable = DataGridViewTriState.True;
             Done.SortMode = DataGridViewColumnSortMode.Automatic;
-            Done.Width = 60;
             // 
             // TaskID
             // 
             TaskID.HeaderText = "Task ID";
             TaskID.MinimumWidth = 6;
             TaskID.Name = "TaskID";
-            TaskID.Width = 125;
             // 
             // TaskName
             // 
             TaskName.HeaderText = "Task Name";
             TaskName.MinimumWidth = 6;
             TaskName.Name = "TaskName";
-            TaskName.Width = 250;
             // 
             // DueDate
             // 
             DueDate.HeaderText = "Due Date";
             DueDate.MinimumWidth = 6;
             DueDate.Name = "DueDate";
-            DueDate.Width = 150;
             // 
             // Priority
             // 
             Priority.HeaderText = "Priority";
             Priority.MinimumWidth = 6;
             Priority.Name = "Priority";
-            Priority.Width = 115;
             // 
             // txtSearch
             // 
-            txtSearch.Location = new Point(12, 73);
+            txtSearch.Location = new Point(12, 69);
             txtSearch.Name = "txtSearch";
             txtSearch.PlaceholderText = "Search for a specific task";
             txtSearch.Size = new Size(439, 27);
@@ -109,6 +123,7 @@
             // 
             // btnBack
             // 
+            btnBack.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnBack.BackColor = Color.Red;
             btnBack.Location = new Point(602, 64);
             btnBack.Name = "btnBack";
@@ -120,8 +135,9 @@
             // 
             // btnAdd
             // 
+            btnAdd.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnAdd.BackColor = Color.DarkSeaGreen;
-            btnAdd.Location = new Point(38, 470);
+            btnAdd.Location = new Point(41, 516);
             btnAdd.Name = "btnAdd";
             btnAdd.Size = new Size(120, 45);
             btnAdd.TabIndex = 3;
@@ -131,8 +147,9 @@
             // 
             // btnDone
             // 
+            btnDone.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnDone.BackColor = Color.YellowGreen;
-            btnDone.Location = new Point(204, 470);
+            btnDone.Location = new Point(207, 516);
             btnDone.Name = "btnDone";
             btnDone.Size = new Size(120, 45);
             btnDone.TabIndex = 4;
@@ -142,8 +159,9 @@
             // 
             // btnDelete
             // 
+            btnDelete.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnDelete.BackColor = Color.Yellow;
-            btnDelete.Location = new Point(380, 470);
+            btnDelete.Location = new Point(383, 516);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(120, 45);
             btnDelete.TabIndex = 5;
@@ -160,12 +178,60 @@
             lblWelcome.Size = new Size(0, 28);
             lblWelcome.TabIndex = 6;
             // 
+            // btnMyAnalytics
+            // 
+            btnMyAnalytics.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnMyAnalytics.BackColor = Color.LightPink;
+            btnMyAnalytics.Location = new Point(571, 516);
+            btnMyAnalytics.Name = "btnMyAnalytics";
+            btnMyAnalytics.Size = new Size(117, 45);
+            btnMyAnalytics.TabIndex = 7;
+            btnMyAnalytics.Text = "My Analytics";
+            btnMyAnalytics.UseVisualStyleBackColor = false;
+            btnMyAnalytics.Click += btnMyAnalytics_Click;
+            // 
+            // btnExcel
+            // 
+            btnExcel.BackColor = Color.LimeGreen;
+            btnExcel.Location = new Point(9, 109);
+            btnExcel.Name = "btnExcel";
+            btnExcel.Size = new Size(155, 45);
+            btnExcel.TabIndex = 8;
+            btnExcel.Text = "Export Data to Excel";
+            btnExcel.UseVisualStyleBackColor = false;
+            btnExcel.Click += btnExcel_Click;
+            // 
+            // btnPdf
+            // 
+            btnPdf.BackColor = Color.IndianRed;
+            btnPdf.Location = new Point(188, 109);
+            btnPdf.Name = "btnPdf";
+            btnPdf.Size = new Size(155, 45);
+            btnPdf.TabIndex = 9;
+            btnPdf.Text = "Export Data to PDF";
+            btnPdf.UseVisualStyleBackColor = false;
+            btnPdf.Click += btnPdf_Click;
+            // 
+            // lblExport
+            // 
+            lblExport.AutoSize = true;
+            lblExport.Location = new Point(360, 121);
+            lblExport.Name = "lblExport";
+            lblExport.Size = new Size(106, 20);
+            lblExport.TabIndex = 11;
+            lblExport.Text = "Data to Export";
+            // 
             // FrmTodoLists
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.PeachPuff;
-            ClientSize = new Size(726, 528);
+            ClientSize = new Size(726, 573);
+            Controls.Add(lblExport);
+            Controls.Add(cboStatus);
+            Controls.Add(btnPdf);
+            Controls.Add(btnExcel);
+            Controls.Add(btnMyAnalytics);
             Controls.Add(lblWelcome);
             Controls.Add(btnDelete);
             Controls.Add(btnDone);
@@ -196,5 +262,10 @@
         private DataGridViewTextBoxColumn TaskName;
         private DataGridViewTextBoxColumn DueDate;
         private DataGridViewTextBoxColumn Priority;
+        private Button btnMyAnalytics;
+        private Button btnExcel;
+        private Button btnPdf;
+        private ComboBox cboStatus;
+        private Label lblExport;
     }
 }
